@@ -1,0 +1,2603 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CPU Architecture Lab — Interactive Simulators & 8086 Microprocessor</title>
+<meta name="description" content="Comprehensive interactive CPU architecture lab: 8-bit Custom CPU with micro-stepping, Endianness & Memory Organization, Assembly Interpreter, Addressing Modes Visualizer, and full Intel 8086 Simulator.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-main: #0d1117;
+  --bg-card: #161b22;
+  --bg-card-subtle: #21262d;
+  --bg-input: #0d1117;
+  --border: #30363d;
+  --border-focus: #58a6ff;
+  --text-main: #f0f6fc;
+  --text-muted: #8b949e;
+  --text-dim: #6e7681;
+  --primary: #2ea043;
+  --primary-hover: #3fb950;
+  --accent: #388bfd;
+  --accent-cyan: #39c5cf;
+  --accent-purple: #a371f7;
+  --warning: #d29922;
+  --danger: #f85149;
+  --highlight-pc: #238636;
+  --highlight-mar: #388bfd;
+  --highlight-ch: #bb8009;
+  --highlight-stack: #8957e5;
+  --shadow: 0 8px 24px rgba(0,0,0,0.4);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+:root[data-theme="light"] {
+  --bg-main: #f6f8fa;
+  --bg-card: #ffffff;
+  --bg-card-subtle: #f3f4f6;
+  --bg-input: #ffffff;
+  --border: #d0d7de;
+  --border-focus: #0969da;
+  --text-main: #1f2328;
+  --text-muted: #57606a;
+  --text-dim: #8c959f;
+  --primary: #1a7f37;
+  --primary-hover: #2da44e;
+  --accent: #0969da;
+  --accent-cyan: #057a85;
+  --accent-purple: #8250df;
+  --warning: #9a6700;
+  --danger: #cf222e;
+  --highlight-pc: #dafbe1;
+  --highlight-mar: #ddf4ff;
+  --highlight-ch: #fff8c5;
+  --highlight-stack: #fbefff;
+  --shadow: 0 8px 24px rgba(140,149,159,0.2);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-cyan));
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+  box-shadow: 0 2px 8px rgba(56, 139, 253, 0.3);
+}
+.brand-title h1 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+.brand-title p {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+nav.tab-nav {
+  display: flex;
+  gap: 6px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 16px auto 0;
+  padding: 0 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+nav.tab-nav::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.tab-btn:hover {
+  background: var(--bg-card-subtle);
+  color: var(--text-main);
+}
+.tab-btn.active {
+  background: var(--bg-card);
+  color: var(--accent);
+  border-bottom-color: var(--bg-card);
+  border-top: 2px solid var(--accent);
+}
+.tab-btn .badge {
+  background: var(--bg-card-subtle);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+.tab-btn.active .badge {
+  background: rgba(56, 139, 253, 0.15);
+  color: var(--accent);
+}
+
+main {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px 32px;
+  flex: 1;
+}
+
+.pane {
+  display: none;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.pane.active {
+  display: block;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pane-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.pane-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pane-header p {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 4px;
+  max-width: 850px;
+}
+
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 24px;
+}
+@media (max-width: 1024px) {
+  .grid-2col { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 18px;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Form inputs & buttons */
+input, select, textarea {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 13px;
+  background: var(--bg-input);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+textarea {
+  width: 100%;
+  resize: vertical;
+  line-height: 1.45;
+  tab-size: 4;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.row label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card-subtle);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.btn:hover {
+  background: var(--border);
+  color: var(--text-main);
+}
+.btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.btn.primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+.btn.accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn.accent:hover {
+  background: #2b74d9;
+}
+.btn.danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn.danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+.btn.sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+/* Registers grid */
+.regs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+}
+.reg-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.reg-box.changed {
+  background: var(--highlight-ch) !important;
+  color: #000;
+  border-color: var(--warning);
+  transform: translateY(-1px);
+}
+.reg-box.changed span {
+  color: #443000;
+}
+.reg-box span {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
+.reg-box .val {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Memory Grid */
+.mem-container {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  padding: 8px;
+}
+.mem-grid {
+  display: grid;
+  gap: 3px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px;
+}
+.mem-grid .hdr {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 3px 0;
+}
+.mem-grid .addr {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+  padding-right: 8px;
+  border: none !important;
+  background: transparent !important;
+}
+.mem-cell {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 0;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.mem-cell:hover {
+  border-color: var(--accent);
+  background: rgba(56, 139, 253, 0.1);
+}
+.mem-cell.pc {
+  background: var(--highlight-pc) !important;
+  color: #fff;
+  font-weight: 700;
+  border-color: var(--primary);
+}
+:root[data-theme="light"] .mem-cell.pc { color: #0d1117; }
+.mem-cell.mar {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+.mem-cell.changed {
+  background: var(--highlight-ch) !important;
+  color: #000;
+  font-weight: 700;
+}
+.mem-cell.stack {
+  background: var(--highlight-stack) !important;
+  color: #fff;
+  font-weight: 700;
+}
+:root[data-theme="light"] .mem-cell.stack { color: #3b1154; }
+
+/* Logs, Tables & Code */
+.log-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 8px 12px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.log-box div {
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.log-box div:last-child { border-bottom: none; }
+.log-entry.fetch { color: var(--accent-cyan); }
+.log-entry.decode { color: var(--warning); }
+.log-entry.execute { color: var(--primary-hover); }
+
+.code-listing {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px;
+}
+.code-line {
+  padding: 3px 10px;
+  display: flex;
+  gap: 12px;
+  border-left: 3px solid transparent;
+  transition: background 0.1s ease;
+}
+.code-line.active {
+  background: rgba(56, 139, 253, 0.15);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+.code-line .line-num {
+  color: var(--text-dim);
+  width: 24px;
+  text-align: right;
+  user-select: none;
+}
+.code-line .line-text {
+  flex: 1;
+}
+
+table.lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px;
+  margin: 8px 0;
+}
+table.lab-table th, table.lab-table td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+}
+table.lab-table th {
+  background: var(--bg-card-subtle);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+table.lab-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.error-banner {
+  color: var(--danger);
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12px;
+  min-height: 20px;
+  margin-top: 6px;
+  font-weight: 600;
+}
+
+/* Visual Hardware Architecture Diagram */
+.arch-diagram {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+  position: relative;
+}
+.diagram-flow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+@media (max-width: 800px) {
+  .diagram-flow { grid-template-columns: 1fr 1fr; }
+}
+.diag-node {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+.diag-node.active-fetch {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(57, 197, 207, 0.4);
+}
+.diag-node.active-decode {
+  border-color: var(--warning);
+  box-shadow: 0 0 12px rgba(210, 153, 34, 0.4);
+}
+.diag-node.active-execute {
+  border-color: var(--primary);
+  box-shadow: 0 0 12px rgba(46, 160, 67, 0.4);
+}
+.diag-node span {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.diag-node b {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+/* Addressing modes interactive step pipeline */
+.pipeline-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.pipe-step {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  opacity: 0.35;
+  transition: all 0.25s ease;
+}
+.pipe-step.active {
+  opacity: 1;
+  border-color: var(--accent);
+  border-left: 4px solid var(--accent);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  transform: translateY(-2px);
+}
+.pipe-step .step-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.pipe-step .step-desc {
+  font-size: 12px;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+/* Speed Slider & Control Bar */
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.speed-control input[type="range"] {
+  width: 100px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+/* Modal Cheatsheet */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  max-width: 800px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h3 { font-size: 18px; }
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Footer */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 16px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+.shortcuts-hint kbd {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">⚡</div>
+    <div class="brand-title">
+      <h1>CPU Architecture Lab</h1>
+      <p>Interactive 8-bit & 8086 Microprocessor Architecture Simulator</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn sm" id="btnHelp" title="Instruction Cheatsheet">📖 Cheatsheet</button>
+    <button class="btn sm" id="btnTheme" title="Toggle Light / Dark Mode">🌓 Theme</button>
+  </div>
+</header>
+
+<nav class="tab-nav" id="tabNav">
+  <button class="tab-btn active" data-tab="1"><span>⚙️</span> 1 · Custom 8-bit CPU <span class="badge">Micro-Step</span></button>
+  <button class="tab-btn" data-tab="2"><span>🔀</span> 2 · Endianness &amp; Memory <span class="badge">Big / Little</span></button>
+  <button class="tab-btn" data-tab="3"><span>💻</span> 3 · Assembly Interpreter <span class="badge">x86 Engine</span></button>
+  <button class="tab-btn" data-tab="4"><span>🎯</span> 4 · Addressing Modes <span class="badge">Visualizer</span></button>
+  <button class="tab-btn" data-tab="5"><span>⚡</span> 5 · 8086 Architecture <span class="badge">Segments &amp; Bus</span></button>
+</nav>
+
+<main>
+  <!-- PANE 1: CUSTOM 8-BIT CPU -->
+  <section class="pane active" id="pane1">
+    <div class="pane-header">
+      <div>
+        <h2>⚙️ 1 · Custom 8-bit CPU Architecture</h2>
+        <p>A classic accumulator-based microcoded CPU with an Instruction Register (IR), Memory Address Register (MAR), Memory Data Register (MDR), ALU, and 64-byte RAM. Micro-step through the <strong>Fetch → Decode → Execute</strong> cycle.</p>
+      </div>
+      <div class="speed-control">
+        <span>Clock:</span>
+        <input type="range" id="cpu1Speed" min="50" max="800" value="250" step="25" title="Execution speed">
+        <span id="cpu1SpeedVal">250ms</span>
+      </div>
+    </div>
+
+    <!-- Active Hardware Flow Diagram -->
+    <div class="arch-diagram">
+      <div class="card-title">Hardware Architecture &amp; Dataflow State</div>
+      <div class="diagram-flow">
+        <div class="diag-node" id="diagPC"><span>Program Counter</span><b id="nodePC">0x00</b></div>
+        <div class="diag-node" id="diagMAR"><span>Address Bus (MAR)</span><b id="nodeMAR">0x00</b></div>
+        <div class="diag-node" id="diagRAM"><span>Memory / Data Bus (MDR)</span><b id="nodeMDR">0x00</b></div>
+        <div class="diag-node" id="diagALU"><span>ALU &amp; Accumulator (A)</span><b id="nodeA">0x00</b></div>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <div>
+        <div class="card">
+          <div class="card-title">
+            <span>Assembly Code Editor</span>
+            <div class="row" style="margin:0;">
+              <label for="selProg1" style="margin-right:4px;">Preset:</label>
+              <select id="selProg1" style="padding:3px 6px;"></select>
+            </div>
+          </div>
+          <textarea id="ed1" rows="15" spellcheck="false"></textarea>
+          <div class="btn-group">
+            <button class="btn primary" id="btnAsm1">🔄 Assemble &amp; Reset</button>
+            <button class="btn accent" id="btnMicro1">▶ Micro-Step</button>
+            <button class="btn" id="btnStep1">⏭ Full Instruction</button>
+            <button class="btn primary" id="btnRun1">▶ Run</button>
+          </div>
+          <div class="error-banner" id="err1"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Instruction Set Architecture (ISA)</div>
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">2-byte format: <code>[Opcode (1 byte)] [Operand / Address (1 byte)]</code></p>
+          <div style="font-family:'JetBrains Mono', Consolas, monospace; font-size:11px; line-height:1.7; color:var(--text-muted);">
+            <strong style="color:var(--text-main);">HLT</strong> (00h) Halt · <strong style="color:var(--text-main);">LDI</strong> (01h) A ← imm · <strong style="color:var(--text-main);">LDA</strong> (02h) A ← M[addr] · <strong style="color:var(--text-main);">STA</strong> (03h) M[addr] ← A<br>
+            <strong style="color:var(--text-main);">ADD</strong> (04h) A ← A + M[addr] · <strong style="color:var(--text-main);">SUB</strong> (05h) A ← A - M[addr] · <strong style="color:var(--text-main);">AND</strong> (06h) · <strong style="color:var(--text-main);">OR</strong> (07h) · <strong style="color:var(--text-main);">XOR</strong> (08h)<br>
+            <strong style="color:var(--text-main);">JMP</strong> (09h) PC ← addr · <strong style="color:var(--text-main);">JZ</strong> (0Ah) if Z: PC ← addr · <strong style="color:var(--text-main);">JNZ</strong> (0Bh) if !Z: PC ← addr · <strong style="color:var(--text-main);">OUT</strong> (0Ch) Port ← A · <strong style="color:var(--text-main);">INC</strong> (0Dh) A++ · <strong style="color:var(--text-main);">DEC</strong> (0Eh) A--
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">Internal Registers &amp; Status</div>
+          <div class="regs-grid" id="regs1"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>64-Byte RAM</span>
+            <span style="font-size:11px; color:var(--text-muted);">PC green · MAR blue · Click byte to edit</span>
+          </div>
+          <div class="mem-container">
+            <div class="mem-grid" id="mem1"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Output Port Log</div>
+          <div id="out1" style="font-family:'JetBrains Mono', Consolas, monospace; font-size:14px; font-weight:700; color:var(--accent-cyan); min-height:24px;">—</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Cycle Execution Trace</div>
+          <div class="log-box" id="log1"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANE 2: ENDIANNESS & MEMORY ORGANISATION -->
+  <section class="pane" id="pane2">
+    <div class="pane-header">
+      <div>
+        <h2>🔀 2 · Memory Organisation &amp; Endianness Lab</h2>
+        <p>Explore byte-addressable memory layout. Learn why Intel x86 uses Little-Endian (least significant byte at the lowest address) while network protocols and RISC processors often use Big-Endian.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Data Inspector &amp; Converter</div>
+      <div class="row">
+        <label for="val2">Value:</label>
+        <input id="val2" value="0x1234ABCD" size="18" placeholder="e.g. 0x1234ABCD, 12345, 1010b">
+        <label for="sz2">Size:</label>
+        <select id="sz2">
+          <option value="8">8-bit (Byte)</option>
+          <option value="16">16-bit (Word)</option>
+          <option value="32" selected>32-bit (Dword)</option>
+          <option value="64">64-bit (Qword)</option>
+        </select>
+        <label for="addr2">Start Address:</label>
+        <input id="addr2" value="0x10" size="6">
+        <label>Presets:</label>
+        <button class="btn sm" id="btnPreInt">32-bit Hex</button>
+        <button class="btn sm" id="btnPreIP">IPv4 Address</button>
+        <button class="btn sm" id="btnPreStr">ASCII "CPU!"</button>
+      </div>
+    </div>
+
+    <div class="grid-2col">
+      <div>
+        <div class="card">
+          <div class="card-title">Side-by-Side Byte Layout Comparison</div>
+          <table class="lab-table" id="endianTable">
+            <thead>
+              <tr><th>Offset</th><th>Address</th><th>Big-Endian (MSB first)</th><th>Little-Endian (LSB first)</th><th>Role</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Intel 8086 16-bit Word Memory View</div>
+          <div id="w86View" style="font-family:'JetBrains Mono', Consolas, monospace; font-size:12px; line-height:1.7;"></div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:8px; background:var(--bg-card); padding:8px; border-radius:4px; border-left:3px solid var(--accent);">
+            <strong>Architectural Insight:</strong> In x86, <code>MOV [addr], AX</code> stores <code>AL</code> at <code>addr</code> and <code>AH</code> at <code>addr + 1</code>. This allows casting a 32-bit pointer to a 16-bit or 8-bit pointer at the exact same memory address!
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">Memory Operations</div>
+          <div class="btn-group">
+            <button class="btn accent" id="btnWrLE">Write Little-Endian (x86)</button>
+            <button class="btn" id="btnWrBE">Write Big-Endian</button>
+            <button class="btn" id="btnRdLE">Read as Little-Endian</button>
+            <button class="btn" id="btnRdBE">Read as Big-Endian</button>
+            <button class="btn danger" id="btnClearMem2">Clear RAM</button>
+          </div>
+          <div class="row" style="margin-top:12px;">
+            <label for="byteVal2">Single Byte Write:</label>
+            <input id="byteVal2" value="0xFF" size="6">
+            <button class="btn sm" id="btnWrByte">Write to Address</button>
+            <button class="btn sm" id="btnRdByte">Read Address</button>
+          </div>
+          <div id="res2" style="font-family:'JetBrains Mono', Consolas, monospace; font-size:13px; font-weight:700; color:var(--accent-cyan); min-height:22px; margin:8px 0;">—</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>64-Byte RAM Inspection Grid</span>
+            <span style="font-size:11px; color:var(--text-muted);">16 bytes per row · Click to edit byte</span>
+          </div>
+          <div class="mem-container">
+            <div class="mem-grid" id="mem2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANE 3: ASSEMBLY INTERPRETER -->
+  <section class="pane" id="pane3">
+    <div class="pane-header">
+      <div>
+        <h2>💻 3 · Full Assembly Language Interpreter</h2>
+        <p>Complete 16-bit x86 simulator with all general registers (<code>AX, BX, CX, DX, SI, DI, BP, SP</code>), 8-bit sub-registers (<code>AL, AH, BL, BH, CL, CH, DL, DH</code>), Stack operations (<code>PUSH, POP, CALL, RET</code>), Arithmetic &amp; Logic, Conditionals, and Flags.</p>
+      </div>
+      <div class="speed-control">
+        <span>Clock:</span>
+        <input type="range" id="sim3Speed" min="50" max="800" value="200" step="25">
+        <span id="sim3SpeedVal">200ms</span>
+      </div>
+    </div>
+    <div class="sim-host" id="simHost3"></div>
+  </section>
+
+  <!-- PANE 4: ADDRESSING MODES VISUALIZER -->
+  <section class="pane" id="pane4">
+    <div class="pane-header">
+      <div>
+        <h2>🎯 4 · Addressing Modes Interactive Visualizer</h2>
+        <p>Visualise how the 8086 calculates the Effective Address (EA) from registers, displacements, and index registers before initiating a bus cycle.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Mode Selection &amp; Register Parameters</div>
+      <div class="row">
+        <label for="selMode4">Mode:</label>
+        <select id="selMode4">
+          <option value="imm">Immediate (e.g. MOV AL, 25h)</option>
+          <option value="reg">Register (e.g. MOV AL, BL)</option>
+          <option value="dir" selected>Direct Addressing (e.g. MOV AL, [10h])</option>
+          <option value="ind">Register Indirect (e.g. MOV AL, [BX])</option>
+          <option value="idx">Indexed Addressing (e.g. MOV AL, [SI+04h])</option>
+          <option value="base">Based Addressing (e.g. MOV AL, [BP+08h])</option>
+          <option value="baseIdx">Based-Indexed with Displacement (e.g. MOV AL, [BX+SI+02h])</option>
+          <option value="rel">Relative Addressing (e.g. JMP -4)</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="inpBX4">BX:</label><input id="inpBX4" value="0x10" size="6">
+        <label for="inpBP4">BP:</label><input id="inpBP4" value="0x20" size="6">
+        <label for="inpSI4">SI:</label><input id="inpSI4" value="0x04" size="6">
+        <label for="inpDI4">DI:</label><input id="inpDI4" value="0x02" size="6">
+        <label for="inpDisp4">Disp / Addr:</label><input id="inpDisp4" value="0x0A" size="6">
+        <label for="inpImm4">Immediate:</label><input id="inpImm4" value="0x42" size="6">
+        <label for="inpPC4">PC / IP:</label><input id="inpPC4" value="0x08" size="6">
+        <label for="inpRel4">Rel Offset:</label><input id="inpRel4" value="-4" size="4">
+      </div>
+      <div class="btn-group">
+        <button class="btn primary" id="btnAnim4">▶ Animate Pipeline Path</button>
+        <button class="btn" id="btnNextStep4">⏭ Next Step</button>
+        <button class="btn" id="btnShowAll4">Show Complete Path</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Instruction Decoded</div>
+      <div id="insText4" style="font-family:'JetBrains Mono', Consolas, monospace; font-size:18px; font-weight:700; color:var(--accent-cyan); margin-bottom:12px;"></div>
+      <div class="pipeline-steps" id="pipeSteps4"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>Sample 64-Byte RAM</span>
+        <span style="font-size:11px; color:var(--text-muted);">Effective address highlighted in blue/green</span>
+      </div>
+      <div class="mem-container">
+        <div class="mem-grid" id="mem4"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANE 5: 8086 ARCHITECTURE SIMULATOR -->
+  <section class="pane" id="pane5">
+    <div class="pane-header">
+      <div>
+        <h2>⚡ 5 · Intel 8086 Architecture &amp; Bus Simulator</h2>
+        <p>Full 8086 microprocessor simulation with 20-bit Physical Address generation (<code>Segment × 16 + Offset</code>), Bus Interface Unit (BIU) cycle tracking, Stack Segments (<code>SS:SP</code>), and memory bus timing.</p>
+      </div>
+      <div class="speed-control">
+        <span>Clock:</span>
+        <input type="range" id="sim5Speed" min="50" max="800" value="250" step="25">
+        <span id="sim5SpeedVal">250ms</span>
+      </div>
+    </div>
+    <div class="sim-host" id="simHost5"></div>
+  </section>
+</main>
+
+<footer>
+  <div>CPU Architecture Lab &bull; Free &amp; Open Source Educational Simulator</div>
+  <div class="shortcuts-hint">
+    <kbd>F8</kbd> Step &bull; <kbd>Space</kbd> / <kbd>F9</kbd> Run/Pause &bull; <kbd>F2</kbd> Reset &bull; <kbd>1-5</kbd> Switch Tabs
+  </div>
+</footer>
+
+<!-- CHEATSHEET MODAL -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📚 8086 &amp; Simulator Instruction Reference</h3>
+      <button class="modal-close" id="btnCloseHelp">&times;</button>
+    </div>
+    <div style="font-size:13px; line-height:1.6; color:var(--text-main);">
+      <h4 style="margin:12px 0 6px; color:var(--accent);">Data Transfer Instructions</h4>
+      <p><code>MOV dst, src</code> — Transfer data between registers, memory, or immediate.</p>
+      <p><code>XCHG dst, src</code> — Exchange contents of two registers or register &amp; memory.</p>
+      <p><code>PUSH src / POP dst</code> — Push 16-bit word onto stack (decrements SP by 2) / Pop from stack.</p>
+      <p><code>LEA reg, [mem]</code> — Load Effective Address into register (e.g. <code>LEA BX, [SI+4]</code>).</p>
+      
+      <h4 style="margin:16px 0 6px; color:var(--accent);">Arithmetic &amp; Logic</h4>
+      <p><code>ADD / SUB dst, src</code> — Add / Subtract with flags (ZF, SF, CF, OF, PF) updated.</p>
+      <p><code>MUL / DIV src</code> — Unsigned 16-bit multiplication (<code>DX:AX ← AX * src</code>) / division.</p>
+      <p><code>INC / DEC dst</code> — Increment / Decrement by 1 (leaves Carry Flag CF unchanged).</p>
+      <p><code>AND / OR / XOR / NOT dst, src</code> — Bitwise logic operations.</p>
+      <p><code>CMP dst, src</code> — Compare operands by subtracting (updates flags, preserves dst).</p>
+      <p><code>TEST dst, src</code> — Bitwise AND test (updates ZF, SF, PF; clears CF, OF).</p>
+      <p><code>SHL / SHR dst, count</code> — Shift Left / Right by count or CL.</p>
+      
+      <h4 style="margin:16px 0 6px; color:var(--accent);">Control Flow &amp; Stack</h4>
+      <p><code>JMP label</code> — Unconditional jump.</p>
+      <p><code>JE / JZ, JNE / JNZ</code> — Jump if Equal (Zero flag = 1) / Not Equal (Zero flag = 0).</p>
+      <p><code>JG, JGE, JL, JLE</code> — Signed conditional jumps (Greater, Less, etc.).</p>
+      <p><code>JA, JAE, JB, JBE</code> — Unsigned conditional jumps (Above, Below, Carry).</p>
+      <p><code>CALL label / RET</code> — Subroutine call (pushes return IP to stack) / return.</p>
+      <p><code>LOOP label</code> — Decrement CX, jump if CX &ne; 0.</p>
+      <p><code>HLT</code> — Halt processor execution.</p>
+
+      <h4 style="margin:16px 0 6px; color:var(--accent);">Addressing Modes</h4>
+      <p>Supports direct offsets <code>[0x10]</code>, <code>[10h]</code>, registers <code>[BX]</code>, displacements <code>[BX+4]</code>, <code>[SI-2]</code>, and based-indexed <code>[BX+SI+disp]</code>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== CORE UTILITIES & HELPERS ====================
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const hx = (n, w = 2) => ((n >>> 0) & ((1 << (w * 4)) - 1 || 0xFFFFFFFF)).toString(16).toUpperCase().padStart(w, '0');
+
+function parseNum(s) {
+  if (typeof s !== 'string') s = String(s);
+  s = s.trim();
+  if (!s) return NaN;
+  // ASCII character literal: 'A'
+  if (/^['"][^'"]['"]$/.test(s)) return s.charCodeAt(1);
+  // Hex with 0x prefix: 0x1A, -0x10
+  if (/^[+-]?0x[0-9a-fA-F]+$/i.test(s)) return parseInt(s, 16);
+  // Hex with h suffix: 0FFh, 10h, FFh, 0ABCDh
+  if (/^[+-]?[0-9a-fA-F]+h$/i.test(s)) return parseInt(s.slice(0, -1), 16);
+  // Binary with b suffix: 1010b, 11110000b
+  if (/^[+-]?[01]+b$/i.test(s)) return parseInt(s.slice(0, -1), 2);
+  // Standard decimal integer
+  if (/^[+-]?\d+$/.test(s)) return parseInt(s, 10);
+  return NaN;
+}
+
+function renderCells(el, pairs) {
+  const prev = el._prev || {};
+  el.innerHTML = pairs.map(([k, v]) => {
+    const changed = prev[k] !== undefined && String(prev[k]) !== String(v);
+    return `<div class="reg-box ${changed ? 'changed' : ''}"><span>${k}</span><div class="val">${v}</div></div>`;
+  }).join('');
+  el._prev = Object.fromEntries(pairs);
+}
+
+function renderGrid(el, mem, start, len, cols, classes = {}, prevMem = null, onCellClick = null) {
+  let html = '';
+  // Header row
+  html += '<div class="hdr addr">Addr</div>';
+  for (let c = 0; c < cols; c++) {
+    html += `<div class="hdr">+${hx(c, 1)}</div>`;
+  }
+  for (let i = 0; i < len; i++) {
+    const addr = start + i;
+    if (i % cols === 0) {
+      html += `<div class="addr">${hx(addr, 3)}</div>`;
+    }
+    let cls = '';
+    if (prevMem && prevMem[addr] !== mem[addr]) cls += ' changed';
+    if (classes && classes[addr]) cls += ' ' + classes[addr];
+    html += `<div class="mem-cell${cls}" data-addr="${addr}">${hx(mem[addr])}</div>`;
+  }
+  el.innerHTML = html;
+  el.style.gridTemplateColumns = `48px repeat(${cols}, minmax(28px, 1fr))`;
+  if (onCellClick) {
+    el.querySelectorAll('.mem-cell').forEach(cell => {
+      cell.onclick = () => {
+        const a = parseInt(cell.getAttribute('data-addr'), 10);
+        onCellClick(a);
+      };
+    });
+  }
+}
+
+// Global Theme & Modal Management
+$('#btnTheme').onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+};
+$('#btnHelp').onclick = () => $('#helpModal').classList.add('open');
+$('#btnCloseHelp').onclick = () => $('#helpModal').classList.remove('open');
+$('#helpModal').onclick = (e) => { if (e.target === $('#helpModal')) $('#helpModal').classList.remove('open'); };
+
+// Tab Navigation
+function switchTab(tabIndex) {
+  $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === String(tabIndex)));
+  $$('.pane').forEach((p, idx) => p.classList.toggle('active', idx + 1 === tabIndex));
+}
+$$('.tab-btn').forEach(btn => {
+  btn.onclick = () => switchTab(parseInt(btn.dataset.tab, 10));
+});
+
+// Keyboard Shortcuts
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+  if (e.key === 'F8') {
+    e.preventDefault();
+    const activePane = $('.pane.active');
+    if (activePane.id === 'pane1') $('#btnStep1').click();
+    else if (activePane.id === 'pane3') $('.sim-host#simHost3 .btn-step')?.click();
+    else if (activePane.id === 'pane4') $('#btnNextStep4')?.click();
+    else if (activePane.id === 'pane5') $('.sim-host#simHost5 .btn-step')?.click();
+  } else if (e.key === 'F9' || e.code === 'Space') {
+    e.preventDefault();
+    const activePane = $('.pane.active');
+    if (activePane.id === 'pane1') $('#btnRun1').click();
+    else if (activePane.id === 'pane3') $('.sim-host#simHost3 .btn-run')?.click();
+    else if (activePane.id === 'pane5') $('.sim-host#simHost5 .btn-run')?.click();
+  } else if (e.key === 'F2') {
+    e.preventDefault();
+    const activePane = $('.pane.active');
+    if (activePane.id === 'pane1') $('#btnAsm1').click();
+    else if (activePane.id === 'pane3') $('.sim-host#simHost3 .btn-reset')?.click();
+    else if (activePane.id === 'pane5') $('.sim-host#simHost5 .btn-reset')?.click();
+  } else if (e.key >= '1' && e.key <= '5' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    switchTab(parseInt(e.key, 10));
+  }
+});
+
+
+// ============================================================================
+// ==================== 1. CUSTOM 8-BIT CPU SIMULATOR =========================
+// ============================================================================
+(function initCustomCPU() {
+  const P = $('#pane1'), q = s => $(s, P);
+  const OPS = { HLT: 0x00, LDI: 0x01, LDA: 0x02, STA: 0x03, ADD: 0x04, SUB: 0x05, AND: 0x06, OR: 0x07, XOR: 0x08, JMP: 0x09, JZ: 0x0A, JNZ: 0x0B, OUT: 0x0C, INC: 0x0D, DEC: 0x0E };
+  const OPN = Object.fromEntries(Object.entries(OPS).map(([k, v]) => [v, k]));
+  const SIG = {
+    HLT: 'Halt CPU clock',
+    LDI: 'IR.operand → A; Flags updated',
+    LDA: 'MAR ← operand; MDR ← RAM[MAR]; A ← MDR',
+    STA: 'MAR ← operand; MDR ← A; RAM[MAR] ← MDR',
+    ADD: 'MAR ← operand; MDR ← RAM[MAR]; B ← MDR; ALU(A + B) → A; Flags',
+    SUB: 'MAR ← operand; MDR ← RAM[MAR]; B ← MDR; ALU(A - B) → A; Flags',
+    AND: 'MAR ← operand; MDR ← RAM[MAR]; B ← MDR; ALU(A & B) → A; Flags',
+    OR:  'MAR ← operand; MDR ← RAM[MAR]; B ← MDR; ALU(A | B) → A; Flags',
+    XOR: 'MAR ← operand; MDR ← RAM[MAR]; B ← MDR; ALU(A ^ B) → A; Flags',
+    JMP: 'PC ← operand (Unconditional)',
+    JZ:  'if (Z == 1) PC ← operand; else PC unchanged',
+    JNZ: 'if (Z == 0) PC ← operand; else PC unchanged',
+    OUT: 'Output Port ← A',
+    INC: 'ALU(A + 1) → A; Flags updated',
+    DEC: 'ALU(A - 1) → A; Flags updated'
+  };
+
+  const PROGS = {
+    'Sum 5+4+3+2+1': `; Sum integers from 5 down to 1
+      LDI 0
+      STA sum
+loop: LDA cnt
+      JZ done
+      LDA sum
+      ADD cnt
+      STA sum
+      LDA cnt
+      SUB one
+      STA cnt
+      JMP loop
+done: LDA sum
+      OUT
+      HLT
+cnt:  DB 5
+one:  DB 1
+sum:  DB 0`,
+
+    'Multiply 3 × 4': `; Multiply 3 by 4 via repeated addition
+      LDI 0
+      STA result
+loop: LDA y
+      JZ done
+      LDA result
+      ADD x
+      STA result
+      LDA y
+      SUB one
+      STA y
+      JMP loop
+done: LDA result
+      OUT
+      HLT
+x:      DB 3
+y:      DB 4
+one:    DB 1
+result: DB 0`,
+
+    'Factorial of 4 (4!)': `; Compute 4! = 4 x 3 x 2 x 1 = 24 (18h)
+      LDI 1
+      STA fact
+      LDA n
+      STA cur
+outer:LDA cur
+      SUB one
+      JZ fin
+      STA mult
+      LDI 0
+      STA acc
+mul_lp:LDA mult
+      JZ mul_dn
+      LDA acc
+      ADD fact
+      STA acc
+      LDA mult
+      SUB one
+      STA mult
+      JMP mul_lp
+mul_dn:LDA acc
+      STA fact
+      LDA cur
+      SUB one
+      STA cur
+      JMP outer
+fin:  LDA fact
+      OUT
+      HLT
+n:    DB 4
+cur:  DB 0
+fact: DB 0
+mult: DB 0
+acc:  DB 0
+one:  DB 1`,
+
+    'Fibonacci Series': `; Compute Fibonacci numbers: 0, 1, 1, 2, 3, 5, 8...
+      LDA f0
+      OUT
+      LDA f1
+      OUT
+loop: LDA f0
+      ADD f1
+      OUT
+      STA next
+      LDA f1
+      STA f0
+      LDA next
+      STA f1
+      LDA count
+      SUB one
+      STA count
+      JZ halt
+      JMP loop
+halt: HLT
+f0:    DB 0
+f1:    DB 1
+next:  DB 0
+count: DB 6
+one:   DB 1`,
+
+    'Bitwise Logic Mask': `; Bitwise AND, OR, XOR demonstration
+      LDA val
+      AND mask
+      STA and_r
+      LDA val
+      OR mask
+      STA or_r
+      LDA val
+      XOR mask
+      STA xor_r
+      OUT
+      HLT
+val:   DB 0F0h
+mask:  DB 0AAh
+and_r: DB 0
+or_r:  DB 0
+xor_r: DB 0`
+  };
+
+  const ed = q('#ed1'), sel = q('#selProg1'), errEl = q('#err1');
+  Object.keys(PROGS).forEach(k => sel.add(new Option(k)));
+
+  let C, tm = null;
+
+  function assemble(src) {
+    const lines = src.split('\n');
+    const parsed = [];
+    const labels = {};
+    let byteAddr = 0;
+
+    for (let rawLine of lines) {
+      const code = rawLine.split(';')[0].trim();
+      if (!code) continue;
+      let label = null;
+      let stmt = code;
+      const m = code.match(/^([a-zA-Z_]\w*):\s*(.*)$/);
+      if (m) {
+        label = m[1];
+        stmt = m[2].trim();
+        labels[label] = byteAddr;
+      }
+      if (!stmt) continue;
+
+      const tokens = stmt.split(/\s+/).filter(Boolean);
+      const op = tokens[0].toUpperCase();
+      const arg = tokens[1] !== undefined ? tokens[1] : null;
+
+      parsed.push({ addr: byteAddr, label, op, arg, raw: stmt });
+      if (op === 'DB') byteAddr += 1;
+      else byteAddr += 2;
+    }
+
+    if (byteAddr > 64) throw new Error(`Program memory size (${byteAddr} bytes) exceeds 64-byte RAM limit.`);
+
+    const mem = new Array(64).fill(0);
+    const resolveVal = (s) => {
+      if (s in labels) return labels[s];
+      const n = parseNum(s);
+      if (isNaN(n)) throw new Error(`Undefined symbol or bad numeric literal: '${s}'`);
+      return n & 0xFF;
+    };
+
+    for (const item of parsed) {
+      if (item.op === 'DB') {
+        mem[item.addr] = resolveVal(item.arg);
+      } else {
+        if (!(item.op in OPS)) throw new Error(`Unknown instruction '${item.op}'`);
+        mem[item.addr] = OPS[item.op];
+        mem[item.addr + 1] = item.arg !== null ? resolveVal(item.arg) : 0;
+      }
+    }
+    return { mem, labels };
+  }
+
+  function resetState() {
+    if (tm) { clearInterval(tm); tm = null; q('#btnRun1').textContent = '▶ Run'; }
+    errEl.textContent = '';
+    try {
+      const assembled = assemble(ed.value);
+      C = {
+        m: assembled.mem,
+        pm: assembled.mem.slice(),
+        pc: 0, ir: 0, mar: 0, mdr: 0, a: 0, b: 0,
+        z: 1, c: 0, phase: 0, halted: 0,
+        out: [], aluStr: '—', log: [],
+        op: '', arg: 0
+      };
+      render(true);
+    } catch (e) {
+      errEl.textContent = e.message || e;
+    }
+  }
+
+  function addLog(s, type = '') {
+    C.log.unshift({ text: s, type });
+  }
+
+  function microStep() {
+    if (C.halted) return false;
+    C.pm = C.m.slice();
+
+    if (C.phase === 0) { // FETCH
+      if (C.pc >= 64) {
+        C.halted = 1;
+        addLog(`HALT: PC (${hx(C.pc)}) reached end of memory.`);
+        render();
+        return false;
+      }
+      C.mar = C.pc;
+      C.ir = C.m[C.pc];
+      C.arg = C.mdr = C.m[(C.pc + 1) & 63];
+      C.pc = (C.pc + 2) & 63;
+      addLog(`FETCH  → MAR=PC(${hx(C.mar)}) | IR=0x${hx(C.ir)} | Operand=0x${hx(C.arg)} | PC←PC+2(0x${hx(C.pc)})`, 'fetch');
+      C.phase = 1;
+    } else if (C.phase === 1) { // DECODE
+      C.op = OPN[C.ir] || '???';
+      addLog(`DECODE → 0x${hx(C.ir)} = ${C.op} 0x${hx(C.arg)} | Signals: ${SIG[C.op] || 'Illegal instruction'}`, 'decode');
+      C.phase = 2;
+    } else { // EXECUTE
+      const o = C.op, x = C.arg;
+      C.aluStr = '—';
+      const readMem = () => {
+        if (x >= 64) throw new Error(`Memory address out of bounds: 0x${hx(x)}`);
+        C.mar = x;
+        C.mdr = C.m[x];
+      };
+      const updateZ = () => { C.z = (C.a === 0) ? 1 : 0; };
+
+      try {
+        switch (o) {
+          case 'HLT':
+            C.halted = 1;
+            break;
+          case 'LDI':
+            C.a = x & 0xFF;
+            updateZ();
+            break;
+          case 'LDA':
+            readMem();
+            C.a = C.mdr;
+            updateZ();
+            break;
+          case 'STA':
+            if (x >= 64) throw new Error(`Memory address out of bounds: 0x${hx(x)}`);
+            C.mar = x;
+            C.mdr = C.a;
+            C.m[x] = C.a;
+            break;
+          case 'ADD':
+            readMem();
+            C.b = C.mdr;
+            {
+              const sum = C.a + C.b;
+              C.c = sum > 0xFF ? 1 : 0;
+              C.a = sum & 0xFF;
+            }
+            C.aluStr = 'A + B';
+            updateZ();
+            break;
+          case 'SUB':
+            readMem();
+            C.b = C.mdr;
+            {
+              C.c = C.a < C.b ? 1 : 0;
+              C.a = (C.a - C.b) & 0xFF;
+            }
+            C.aluStr = 'A - B';
+            updateZ();
+            break;
+          case 'AND':
+            readMem(); C.b = C.mdr; C.a = (C.a & C.b) & 0xFF; C.aluStr = 'A & B'; updateZ(); break;
+          case 'OR':
+            readMem(); C.b = C.mdr; C.a = (C.a | C.b) & 0xFF; C.aluStr = 'A | B'; updateZ(); break;
+          case 'XOR':
+            readMem(); C.b = C.mdr; C.a = (C.a ^ C.b) & 0xFF; C.aluStr = 'A ^ B'; updateZ(); break;
+          case 'INC':
+            C.a = (C.a + 1) & 0xFF;
+            C.aluStr = 'A + 1';
+            updateZ();
+            break;
+          case 'DEC':
+            C.a = (C.a - 1) & 0xFF;
+            C.aluStr = 'A - 1';
+            updateZ();
+            break;
+          case 'JMP':
+            C.pc = x & 63;
+            break;
+          case 'JZ':
+            if (C.z === 1) C.pc = x & 63;
+            break;
+          case 'JNZ':
+            if (C.z === 0) C.pc = x & 63;
+            break;
+          case 'OUT':
+            C.out.push(C.a);
+            break;
+          default:
+            C.halted = 1;
+            throw new Error(`Illegal opcode: 0x${hx(C.ir)}`);
+        }
+      } catch (err) {
+        C.halted = 1;
+        errEl.textContent = err.message || err;
+      }
+      addLog(`EXECUTE → ${o}: A=0x${hx(C.a)} | B=0x${hx(C.b)} | Z=${C.z} | PC=0x${hx(C.pc)}${C.halted ? ' [HALTED]' : ''}`, 'execute');
+      C.phase = 0;
+    }
+    render();
+    return !C.halted;
+  }
+
+  function fullInstructionStep() {
+    if (C.halted) return false;
+    do {
+      microStep();
+    } while (C.phase !== 0 && !C.halted);
+    return !C.halted;
+  }
+
+  function render(fullReset = false) {
+    const regsEl = q('#regs1');
+    if (fullReset) regsEl._prev = null;
+    const phaseNames = ['FETCH', 'DECODE', 'EXECUTE'];
+    renderCells(regsEl, [
+      ['A (Accumulator)', '0x' + hx(C.a)],
+      ['B (Register)', '0x' + hx(C.b)],
+      ['PC (Prog Counter)', '0x' + hx(C.pc)],
+      ['IR (Instruction)', '0x' + hx(C.ir)],
+      ['MAR (Address)', '0x' + hx(C.mar)],
+      ['MDR (Data)', '0x' + hx(C.mdr)],
+      ['Zero Flag (Z)', String(C.z)],
+      ['Carry Flag (C)', String(C.c)],
+      ['ALU Op', C.aluStr],
+      ['CPU Phase', C.halted ? 'HALTED' : phaseNames[C.phase]]
+    ]);
+
+    // Update animated architecture diagram
+    $('#nodePC').textContent = '0x' + hx(C.pc);
+    $('#nodeMAR').textContent = '0x' + hx(C.mar);
+    $('#nodeMDR').textContent = '0x' + hx(C.mdr);
+    $('#nodeA').textContent = '0x' + hx(C.a);
+
+    $('#diagPC').className = 'diag-node' + (C.phase === 0 ? ' active-fetch' : '');
+    $('#diagMAR').className = 'diag-node' + (C.phase === 0 || C.phase === 2 ? ' active-fetch' : '');
+    $('#diagRAM').className = 'diag-node' + (C.phase === 1 ? ' active-decode' : '');
+    $('#diagALU').className = 'diag-node' + (C.phase === 2 ? ' active-execute' : '');
+
+    // Memory grid
+    const cls = {};
+    if (!C.halted) {
+      cls[C.pc] = 'pc';
+      cls[(C.pc + 1) & 63] = (cls[(C.pc + 1) & 63] || '') + ' pc';
+    }
+    cls[C.mar] = (cls[C.mar] || '') + ' mar';
+
+    renderGrid(q('#mem1'), C.m, 0, 64, 8, cls, C.pm, (addr) => {
+      const cur = '0x' + hx(C.m[addr]);
+      const res = prompt(`Edit RAM byte at address 0x${hx(addr)}:`, cur);
+      if (res !== null) {
+        const val = parseNum(res);
+        if (!isNaN(val)) {
+          C.pm = C.m.slice();
+          C.m[addr] = val & 0xFF;
+          render();
+        }
+      }
+    });
+
+    // Output port
+    q('#out1').textContent = C.out.length
+      ? C.out.map(v => `${v} (0x${hx(v)})`).join(' · ')
+      : '—';
+
+    // Cycle trace
+    q('#log1').innerHTML = C.log.slice(0, 45).map(entry =>
+      `<div class="log-entry ${entry.type}">${entry.text}</div>`
+    ).join('');
+  }
+
+  // Speed slider
+  const speedSlider = q('#cpu1Speed');
+  const speedVal = q('#cpu1SpeedVal');
+  speedSlider.oninput = () => speedVal.textContent = speedSlider.value + 'ms';
+
+  // Controls
+  sel.onchange = () => { ed.value = PROGS[sel.value]; resetState(); };
+  q('#btnAsm1').onclick = resetState;
+  q('#btnMicro1').onclick = () => microStep();
+  q('#btnStep1').onclick = () => fullInstructionStep();
+  q('#btnRun1').onclick = () => {
+    if (tm) {
+      clearInterval(tm);
+      tm = null;
+      q('#btnRun1').textContent = '▶ Run';
+      return;
+    }
+    q('#btnRun1').textContent = '⏸ Pause';
+    let steps = 0;
+    const interval = parseInt(speedSlider.value, 10);
+    tm = setInterval(() => {
+      if (!fullInstructionStep() || ++steps > 2000) {
+        clearInterval(tm);
+        tm = null;
+        q('#btnRun1').textContent = '▶ Run';
+      }
+    }, interval);
+  };
+
+  ed.value = PROGS[sel.value];
+  resetState();
+})();
+
+
+// ============================================================================
+// ==================== 2. ENDIANNESS & MEMORY LAB ============================
+// ============================================================================
+(function initEndiannessLab() {
+  const P = $('#pane2'), q = s => $(s, P);
+  let mem = new Uint8Array(64), prevMem = null;
+
+  const getNumVal = () => {
+    const s = q('#val2').value.trim();
+    if (!s) return null;
+    try {
+      const bitWidth = +q('#sz2').value;
+      let val;
+      if (/^[0-9a-f]+h$/i.test(s)) val = BigInt('0x' + s.slice(0, -1));
+      else if (/^[01]+b$/i.test(s)) val = BigInt('0b' + s.slice(0, -1));
+      else if (/^['"][^'"]['"]$/.test(s)) val = BigInt(s.charCodeAt(1));
+      else val = BigInt(s);
+      return BigInt.asUintN(bitWidth, val);
+    } catch {
+      return null;
+    }
+  };
+
+  const getAddr = () => {
+    const a = parseNum(q('#addr2').value);
+    return isNaN(a) ? 0 : a;
+  };
+
+  function toBytesBE(val, byteCount) {
+    const bytes = [];
+    for (let i = 0; i < byteCount; i++) {
+      const shift = BigInt(8 * (byteCount - 1 - i));
+      bytes.push(Number((val >> shift) & 0xFFn));
+    }
+    return bytes;
+  }
+
+  function updateTable() {
+    const val = getNumVal();
+    const byteCount = +q('#sz2').value / 8;
+    const baseAddr = getAddr();
+    const tbody = q('#endianTable tbody');
+    const w86 = q('#w86View');
+
+    if (val === null || isNaN(baseAddr)) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:var(--danger);">Invalid numeric input format</td></tr>';
+      w86.innerHTML = '—';
+      return;
+    }
+
+    const be = toBytesBE(val, byteCount);
+    const le = be.slice().reverse();
+
+    tbody.innerHTML = be.map((_, i) => {
+      const addr = baseAddr + i;
+      const role = i === 0 ? '<strong style="color:var(--warning);">MSB (Most Significant)</strong>'
+                 : (i === byteCount - 1 ? '<strong style="color:var(--accent-cyan);">LSB (Least Significant)</strong>' : 'Byte ' + i);
+      return `<tr>
+        <td>+${i}</td>
+        <td><code>0x${hx(addr, 3)}</code></td>
+        <td><strong style="color:${i === 0 ? 'var(--warning)' : 'var(--text-main)'};">0x${hx(be[i])}</strong></td>
+        <td><strong style="color:${i === byteCount - 1 ? 'var(--warning)' : 'var(--text-main)'};">0x${hx(le[i])}</strong></td>
+        <td>${role}</td>
+      </tr>`;
+    }).join('');
+
+    let wHtml = '';
+    for (let j = 0; j < Math.ceil(byteCount / 2); j++) {
+      const wordVal = Number((val >> BigInt(16 * j)) & 0xFFFFn);
+      const lowByte = wordVal & 0xFF;
+      const highByte = (wordVal >> 8) & 0xFF;
+      wHtml += `<div>• <strong>Word ${j}</strong> (0x${hx(wordVal, 4)}): [0x${hx(baseAddr + 2*j, 3)}] = <code>0x${hx(lowByte)}</code> (Low/AL), [0x${hx(baseAddr + 2*j + 1, 3)}] = <code>0x${hx(highByte)}</code> (High/AH)</div>`;
+    }
+    w86.innerHTML = wHtml;
+  }
+
+  function renderRam() {
+    renderGrid(q('#mem2'), mem, 0, 64, 16, null, prevMem, (addr) => {
+      const cur = '0x' + hx(mem[addr]);
+      const res = prompt(`Edit byte at RAM address 0x${hx(addr)}:`, cur);
+      if (res !== null) {
+        const v = parseNum(res);
+        if (!isNaN(v)) {
+          prevMem = mem.slice();
+          mem[addr] = v & 0xFF;
+          renderRam();
+        }
+      }
+    });
+  }
+
+  function writeMemory(isLittleEndian) {
+    const val = getNumVal();
+    const byteCount = +q('#sz2').value / 8;
+    const baseAddr = getAddr();
+    const resEl = q('#res2');
+
+    if (val === null || isNaN(baseAddr) || baseAddr < 0 || baseAddr + byteCount > 64) {
+      resEl.textContent = 'Error: Address range out of bounds (0x00 - 0x3F).';
+      resEl.style.color = 'var(--danger)';
+      return;
+    }
+
+    prevMem = mem.slice();
+    let bytes = toBytesBE(val, byteCount);
+    if (isLittleEndian) bytes.reverse();
+
+    bytes.forEach((b, idx) => {
+      mem[baseAddr + idx] = b;
+    });
+
+    resEl.textContent = `Wrote ${byteCount} bytes starting at 0x${hx(baseAddr)} (${isLittleEndian ? 'Little-Endian x86' : 'Big-Endian'})`;
+    resEl.style.color = 'var(--accent-cyan)';
+    renderRam();
+  }
+
+  function readMemory(isLittleEndian) {
+    const byteCount = +q('#sz2').value / 8;
+    const baseAddr = getAddr();
+    const resEl = q('#res2');
+
+    if (isNaN(baseAddr) || baseAddr < 0 || baseAddr + byteCount > 64) {
+      resEl.textContent = 'Error: Address range out of bounds (0x00 - 0x3F).';
+      resEl.style.color = 'var(--danger)';
+      return;
+    }
+
+    let bytes = Array.from(mem.slice(baseAddr, baseAddr + byteCount));
+    if (isLittleEndian) bytes.reverse();
+
+    const hexStr = bytes.map(b => hx(b)).join('');
+    const decVal = BigInt('0x' + hexStr);
+    resEl.textContent = `Read ${byteCount} bytes as ${isLittleEndian ? 'Little-Endian' : 'Big-Endian'}: 0x${hexStr} (Decimal: ${decVal})`;
+    resEl.style.color = 'var(--primary-hover)';
+  }
+
+  // Presets
+  q('#btnPreInt').onclick = () => { q('#val2').value = '0x12345678'; q('#sz2').value = '32'; updateTable(); };
+  q('#btnPreIP').onclick = () => { q('#val2').value = '0xC0A80101'; q('#sz2').value = '32'; updateTable(); };
+  q('#btnPreStr').onclick = () => { q('#val2').value = '0x43505521'; q('#sz2').value = '32'; updateTable(); };
+
+  // Operations
+  P.addEventListener('input', updateTable);
+  q('#btnWrLE').onclick = () => writeMemory(true);
+  q('#btnWrBE').onclick = () => writeMemory(false);
+  q('#btnRdLE').onclick = () => readMemory(true);
+  q('#btnRdBE').onclick = () => readMemory(false);
+  q('#btnClearMem2').onclick = () => { prevMem = mem.slice(); mem.fill(0); renderRam(); q('#res2').textContent = 'Memory cleared.'; };
+  q('#btnWrByte').onclick = () => {
+    const a = getAddr();
+    const v = parseNum(q('#byteVal2').value);
+    if (isNaN(a) || a < 0 || a > 63 || isNaN(v)) return;
+    prevMem = mem.slice();
+    mem[a] = v & 0xFF;
+    renderRam();
+    q('#res2').textContent = `RAM[0x${hx(a)}] set to 0x${hx(v & 0xFF)}`;
+  };
+  q('#btnRdByte').onclick = () => {
+    const a = getAddr();
+    if (a >= 0 && a < 64) q('#res2').textContent = `RAM[0x${hx(a)}] = 0x${hx(mem[a])} (${mem[a]})`;
+  };
+
+  updateTable();
+  renderRam();
+})();
+
+
+// ============================================================================
+// ==================== 3 & 5. COMPLETE ASSEMBLY & 8086 SIMULATOR =============
+// ============================================================================
+const REGS_16 = ['AX', 'BX', 'CX', 'DX', 'SI', 'DI', 'BP', 'SP'];
+const REGS_8 = ['AL', 'AH', 'BL', 'BH', 'CL', 'CH', 'DL', 'DH'];
+const SUB_REG_INFO = {
+  AL: { parent: 'AX', byte: 0 },
+  AH: { parent: 'AX', byte: 1 },
+  BL: { parent: 'BX', byte: 0 },
+  BH: { parent: 'BX', byte: 1 },
+  CL: { parent: 'CX', byte: 0 },
+  CH: { parent: 'CX', byte: 1 },
+  DL: { parent: 'DX', byte: 0 },
+  DH: { parent: 'DX', byte: 1 }
+};
+const SEG_REGS = ['CS', 'DS', 'SS', 'ES'];
+
+const JUMP_CONDS = {
+  JE:  s => s.F.ZF === 1,
+  JZ:  s => s.F.ZF === 1,
+  JNE: s => s.F.ZF === 0,
+  JNZ: s => s.F.ZF === 0,
+  JG:  s => s.F.ZF === 0 && s.F.SF === s.F.OF,
+  JGE: s => s.F.SF === s.F.OF,
+  JL:  s => s.F.SF !== s.F.OF,
+  JLE: s => s.F.ZF === 1 || s.F.SF !== s.F.OF,
+  JA:  s => s.F.CF === 0 && s.F.ZF === 0,
+  JAE: s => s.F.CF === 0,
+  JB:  s => s.F.CF === 1,
+  JC:  s => s.F.CF === 1,
+  JBE: s => s.F.CF === 1 || s.F.ZF === 1,
+  JNC: s => s.F.CF === 0,
+  JMP: () => true
+};
+
+const ALL_OPS = new Set([
+  'MOV', 'XCHG', 'PUSH', 'POP', 'LEA', 'CBW', 'CLC', 'STC', 'CMC',
+  'ADD', 'SUB', 'INC', 'DEC', 'MUL', 'DIV', 'NEG', 'CMP',
+  'AND', 'OR', 'XOR', 'NOT', 'TEST', 'SHL', 'SHR', 'ROL', 'ROR',
+  'LOOP', 'CALL', 'RET', 'HLT', 'NOP', ...Object.keys(JUMP_CONDS)
+]);
+
+function parseAssemblyOperand(s) {
+  s = s.trim();
+  if (!s) return null;
+
+  // Segment override check: e.g. ES:[DI] or DS:[10h]
+  let seg = null;
+  const segMatch = s.match(/^([CDSE]S):(.*)$/i);
+  if (segMatch) {
+    seg = segMatch[1].toUpperCase();
+    s = segMatch[2].trim();
+  }
+
+  // Memory operand [...]
+  const memMatch = s.match(/^\[(.*)\]$/);
+  if (memMatch) {
+    const expr = memMatch[1].trim();
+    const tokens = expr.replace(/\s+/g, '').replace(/([+-])/g, ' $1').trim().split(' ').filter(Boolean);
+    const regs = [];
+    let disp = 0;
+    for (let tok of tokens) {
+      let sign = 1;
+      if (tok.startsWith('+')) tok = tok.slice(1);
+      else if (tok.startsWith('-')) { sign = -1; tok = tok.slice(1); }
+      const upper = tok.toUpperCase();
+      if (REGS_16.includes(upper)) {
+        if (sign < 0) throw new Error(`Negative register offset not allowed: -${upper}`);
+        regs.push(upper);
+      } else {
+        const v = parseNum(tok);
+        if (isNaN(v)) regs.push({ label: tok, sign });
+        else disp += sign * v;
+      }
+    }
+    return { type: 'm', regs, disp, seg, raw: s };
+  }
+
+  const upper = s.toUpperCase();
+  if (REGS_16.includes(upper)) return { type: 'r16', r: upper };
+  if (REGS_8.includes(upper)) return { type: 'r8', r: upper };
+  if (SEG_REGS.includes(upper)) return { type: 'seg', r: upper };
+
+  const numVal = parseNum(s);
+  if (!isNaN(numVal)) return { type: 'i', v: numVal & 0xFFFF };
+
+  return { type: 'l', l: s };
+}
+
+function createAssemblySimulator(container, opts) {
+  const is8086 = !!opts.bus;
+  container.innerHTML = `
+    <div class="grid-2col">
+      <div>
+        <div class="card">
+          <div class="card-title">
+            <span>Assembly Source Program</span>
+            <div class="row" style="margin:0;">
+              <label style="margin-right:4px;">Preset:</label>
+              <select class="sel-prog" style="padding:3px 6px;"></select>
+            </div>
+          </div>
+          <textarea class="ed" rows="15" spellcheck="false"></textarea>
+          <div class="btn-group">
+            <button class="btn primary btn-reset">🔄 Assemble &amp; Reset</button>
+            <button class="btn accent btn-step">⏭ Step</button>
+            <button class="btn primary btn-run">▶ Run</button>
+          </div>
+          <div class="error-banner sim-err"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Assembly Listing &amp; Current IP Pointer</div>
+          <div class="code-listing sim-lst"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Last Instruction Step Trace</div>
+          <div class="log-box sim-trace"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">General Purpose 16-Bit Registers</div>
+          <div class="regs-grid sim-regs"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Status &amp; Control Flags</div>
+          <div class="regs-grid sim-flags"></div>
+        </div>
+
+        ${is8086 ? `
+        <div class="card">
+          <div class="card-title">Segment Registers &amp; Physical Address Generator</div>
+          <div class="regs-grid sim-segs"></div>
+          <div class="sim-ea" style="font-family:'JetBrains Mono', Consolas, monospace; font-size:12px; font-weight:600; color:var(--accent-cyan); margin-top:8px; background:var(--bg-card); padding:8px; border-radius:4px;"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Bus Interface Unit (BIU) Cycles</div>
+          <table class="lab-table sim-bus">
+            <thead><tr><th>#</th><th>Type</th><th>Address Bus</th><th>Data Bus</th><th>Control</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        ` : ''}
+
+        <div class="card">
+          <div class="card-title">
+            <span>Memory Inspector ${is8086 ? '(Physical Segment: DS:0000)' : '(Flat Offsets 00h - 3Fh)'}</span>
+            <span style="font-size:11px; color:var(--text-muted);">Stack purple · EA blue · Changed gold</span>
+          </div>
+          <div class="mem-container">
+            <div class="mem-grid sim-mem"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const q = s => container.querySelector(s);
+  const ed = q('.ed');
+  const selProg = q('.sel-prog');
+  const errEl = q('.sim-err');
+
+  Object.keys(opts.presets).forEach(k => selProg.add(new Option(k)));
+
+  let S, instructions, labels, runTimer = null;
+
+  function reset() {
+    if (runTimer) { clearInterval(runTimer); runTimer = null; q('.btn-run').textContent = '▶ Run'; }
+    errEl.textContent = '';
+    try {
+      instructions = [];
+      labels = {};
+      const lines = ed.value.split('\n');
+      for (let rawLine of lines) {
+        let l = rawLine.split(';')[0].trim();
+        if (!l) continue;
+        const m = l.match(/^([a-zA-Z_]\w*):\s*(.*)$/);
+        if (m) {
+          labels[m[1]] = instructions.length;
+          l = m[2].trim();
+        }
+        if (!l) continue;
+
+        const firstSpace = l.search(/\s/);
+        const op = (firstSpace < 0 ? l : l.slice(0, firstSpace)).toUpperCase();
+        const argStr = firstSpace < 0 ? '' : l.slice(firstSpace + 1).trim();
+        const a = argStr ? argStr.split(',').map(parseAssemblyOperand) : [];
+
+        if (!ALL_OPS.has(op)) throw new Error(`Unknown instruction '${op}'`);
+        instructions.push({ op, a, src: l });
+      }
+
+      S = {
+        R: Object.fromEntries(REGS_16.map(r => [r, 0])),
+        Seg: { CS: opts.cs || 0x0000, DS: (opts.base >> 4) || 0x0000, SS: opts.ss || 0x0020, ES: opts.es || 0x0000 },
+        F: { ZF: 0, SF: 0, CF: 0, OF: 0, PF: 0 },
+        m: new Uint8Array(512),
+        pc: 0, steps: 0,
+        busCycles: [], busCounter: 0,
+        base: opts.base || 0,
+        halted: 0,
+        eaInfo: null,
+        stackBase: 0x01FE
+      };
+
+      S.R.SP = S.stackBase;
+      S.pm = S.m.slice();
+      q('.sim-regs')._prev = null;
+      q('.sim-flags')._prev = null;
+      if (is8086) q('.sim-segs')._prev = null;
+
+      draw();
+    } catch (e) {
+      errEl.textContent = e.message || e;
+    }
+  }
+
+  function logBusCycle(type, addr, data, ctrl = 'OK') {
+    if (!is8086) return;
+    S.busCycles.unshift([++S.busCounter, type, addr, data, ctrl]);
+    if (S.busCycles.length > 8) S.busCycles.pop();
+  }
+
+  function getEffectiveAddress(opnd) {
+    let regSum = 0;
+    for (const r of opnd.regs) {
+      if (typeof r === 'string') regSum += S.R[r];
+      else if (r && r.label) {
+        if (!(r.label in labels)) throw new Error(`Undefined label in memory offset: '${r.label}'`);
+        regSum += r.sign * labels[r.label];
+      }
+    }
+    const offset = (regSum + opnd.disp) & 0xFFFF;
+    let segVal = S.Seg.DS;
+    if (opnd.seg) segVal = S.Seg[opnd.seg] || S.Seg.DS;
+    else if (opnd.regs.includes('BP')) segVal = S.Seg.SS;
+
+    const phys = is8086 ? ((segVal << 4) + offset) : (S.base + offset);
+    if (phys + 1 >= 512) throw new Error(`Memory address out of bounds (0x${hx(phys, 5)})`);
+    S.eaInfo = { offset, phys, segVal };
+    return phys;
+  }
+
+  function getOperandValue(opnd, isByte = false) {
+    if (opnd.type === 'i') return opnd.v;
+    if (opnd.type === 'r16') return S.R[opnd.r];
+    if (opnd.type === 'r8') {
+      const info = SUB_REG_INFO[opnd.r];
+      return (S.R[info.parent] >> (info.byte * 8)) & 0xFF;
+    }
+    if (opnd.type === 'seg') return S.Seg[opnd.r];
+    if (opnd.type === 'l') {
+      if (!(opnd.l in labels)) throw new Error(`Undefined label: '${opnd.l}'`);
+      return labels[opnd.l];
+    }
+    if (opnd.type === 'm') {
+      const phys = getEffectiveAddress(opnd);
+      if (isByte) {
+        const v = S.m[phys];
+        logBusCycle('MEM READ 8-bit', phys, '0x' + hx(v, 2));
+        return v;
+      }
+      const v = S.m[phys] | (S.m[phys + 1] << 8);
+      logBusCycle('MEM READ 16-bit', phys, '0x' + hx(v, 4));
+      if (phys & 1) logBusCycle('  +1 (Odd Addr)', phys + 1, '2nd bus cycle');
+      return v;
+    }
+    throw new Error('Unsupported operand');
+  }
+
+  function setOperandValue(opnd, val) {
+    if (opnd.type === 'r16') {
+      S.R[opnd.r] = val & 0xFFFF;
+    } else if (opnd.type === 'r8') {
+      const info = SUB_REG_INFO[opnd.r];
+      const byteVal = val & 0xFF;
+      if (info.byte === 0) S.R[info.parent] = (S.R[info.parent] & 0xFF00) | byteVal;
+      else S.R[info.parent] = (S.R[info.parent] & 0x00FF) | (byteVal << 8);
+    } else if (opnd.type === 'seg') {
+      S.Seg[opnd.r] = val & 0xFFFF;
+    } else if (opnd.type === 'm') {
+      const phys = getEffectiveAddress(opnd);
+      val &= 0xFFFF;
+      S.m[phys] = val & 0xFF;
+      S.m[phys + 1] = (val >> 8) & 0xFF;
+      logBusCycle('MEM WRITE 16-bit', phys, '0x' + hx(val, 4));
+      if (phys & 1) logBusCycle('  +1 (Odd Addr)', phys + 1, '2nd bus cycle');
+    } else {
+      throw new Error('Cannot assign to immediate operand');
+    }
+  }
+
+  function computeAlu(op, a, b, isByte = false) {
+    const mask = isByte ? 0xFF : 0xFFFF;
+    const signBit = isByte ? 0x80 : 0x8000;
+    const F = S.F;
+    let res;
+
+    if (op === 'ADD') {
+      res = a + b;
+      F.CF = res > mask ? 1 : 0;
+      F.OF = (((a ^ res) & (b ^ res) & signBit) !== 0) ? 1 : 0;
+    } else if (op === 'SUB' || op === 'CMP') {
+      res = a - b;
+      F.CF = a < b ? 1 : 0;
+      F.OF = (((a ^ b) & (a ^ res) & signBit) !== 0) ? 1 : 0;
+    } else if (op === 'AND') {
+      res = a & b; F.CF = F.OF = 0;
+    } else if (op === 'OR') {
+      res = a | b; F.CF = F.OF = 0;
+    } else if (op === 'XOR') {
+      res = a ^ b; F.CF = F.OF = 0;
+    }
+
+    res &= mask;
+    F.ZF = (res === 0) ? 1 : 0;
+    F.SF = (res & signBit) ? 1 : 0;
+    // Parity flag (low 8 bits)
+    let pBits = res & 0xFF;
+    let count = 0;
+    while (pBits) { count += pBits & 1; pBits >>= 1; }
+    F.PF = (count % 2 === 0) ? 1 : 0;
+
+    return res;
+  }
+
+  function step() {
+    if (S.halted) return false;
+    if (S.pc >= instructions.length) {
+      S.halted = 1;
+      draw();
+      return false;
+    }
+
+    const I = instructions[S.pc];
+    const prevRegs = { ...S.R };
+    S.pm = S.m.slice();
+    S.eaInfo = null;
+    let nextPC = S.pc + 1;
+    const [x, y] = I.a;
+    const op = I.op;
+
+    try {
+      if (is8086) logBusCycle('FETCH (IP=' + hx(S.pc, 2) + ')', (S.Seg.CS << 4) + S.pc, I.op, 'Code Fetch');
+      if (x && y && x.type === 'm' && y.type === 'm') throw new Error('Memory-to-memory operations not permitted in x86');
+
+      const isByteOp = (x && x.type === 'r8') || (y && y.type === 'r8');
+      const getTgt = () => {
+        if (!x || !(x.l in labels)) throw new Error(`Target jump label not found: '${x?.l || ''}'`);
+        return labels[x.l];
+      };
+
+      if (op === 'MOV') {
+        setOperandValue(x, getOperandValue(y, isByteOp));
+      } else if (op === 'XCHG') {
+        const vX = getOperandValue(x, isByteOp);
+        const vY = getOperandValue(y, isByteOp);
+        setOperandValue(x, vY);
+        setOperandValue(y, vX);
+      } else if (op === 'LEA') {
+        if (!y || y.type !== 'm') throw new Error('LEA second operand must be a memory reference [...]');
+        getEffectiveAddress(y);
+        setOperandValue(x, S.eaInfo.offset);
+      } else if (['ADD', 'SUB', 'AND', 'OR', 'XOR'].includes(op)) {
+        const vX = getOperandValue(x, isByteOp);
+        const vY = getOperandValue(y, isByteOp);
+        setOperandValue(x, computeAlu(op, vX, vY, isByteOp));
+      } else if (op === 'CMP') {
+        computeAlu('CMP', getOperandValue(x, isByteOp), getOperandValue(y, isByteOp), isByteOp);
+      } else if (op === 'TEST') {
+        computeAlu('AND', getOperandValue(x, isByteOp), getOperandValue(y, isByteOp), isByteOp);
+      } else if (op === 'INC' || op === 'DEC') {
+        const cf = S.F.CF; // INC/DEC do not affect Carry Flag in x86!
+        const vX = getOperandValue(x, isByteOp);
+        setOperandValue(x, computeAlu(op === 'INC' ? 'ADD' : 'SUB', vX, 1, isByteOp));
+        S.F.CF = cf;
+      } else if (op === 'NEG') {
+        const vX = getOperandValue(x, isByteOp);
+        setOperandValue(x, computeAlu('SUB', 0, vX, isByteOp));
+      } else if (op === 'NOT') {
+        const vX = getOperandValue(x, isByteOp);
+        setOperandValue(x, ~vX);
+      } else if (op === 'MUL') {
+        const factor = getOperandValue(x, isByteOp);
+        if (isByteOp) {
+          const res = (S.R.AX & 0xFF) * factor;
+          S.R.AX = res & 0xFFFF;
+          S.F.CF = S.F.OF = (S.R.AX > 0xFF) ? 1 : 0;
+        } else {
+          const res = S.R.AX * factor;
+          S.R.AX = res & 0xFFFF;
+          S.R.DX = Math.floor(res / 0x10000) & 0xFFFF;
+          S.F.CF = S.F.OF = (S.R.DX !== 0) ? 1 : 0;
+        }
+      } else if (op === 'DIV') {
+        const divisor = getOperandValue(x, isByteOp);
+        if (divisor === 0) throw new Error('Divide by zero exception (#DE)');
+        if (isByteOp) {
+          const quot = Math.floor(S.R.AX / divisor);
+          const rem = S.R.AX % divisor;
+          S.R.AX = (quot & 0xFF) | ((rem & 0xFF) << 8);
+        } else {
+          const num = (S.R.DX * 0x10000) + S.R.AX;
+          const quot = Math.floor(num / divisor);
+          const rem = num % divisor;
+          S.R.AX = quot & 0xFFFF;
+          S.R.DX = rem & 0xFFFF;
+        }
+      } else if (op === 'CBW') {
+        const al = S.R.AX & 0xFF;
+        const signExt = (al & 0x80) ? 0xFF00 : 0x0000;
+        S.R.AX = signExt | al;
+      } else if (op === 'CLC') S.F.CF = 0;
+      else if (op === 'STC') S.F.CF = 1;
+      else if (op === 'CMC') S.F.CF = S.F.CF ? 0 : 1;
+      else if (op === 'SHL' || op === 'SHR') {
+        const count = y ? getOperandValue(y, true) : 1;
+        const val = getOperandValue(x, isByteOp);
+        const mask = isByteOp ? 0xFF : 0xFFFF;
+        const width = isByteOp ? 8 : 16;
+        if (op === 'SHL') {
+          S.F.CF = (val >> (width - count)) & 1;
+          setOperandValue(x, (val << count) & mask);
+        } else {
+          S.F.CF = (val >> (count - 1)) & 1;
+          setOperandValue(x, (val >> count) & mask);
+        }
+      } else if (op === 'PUSH') {
+        const val = getOperandValue(x);
+        S.R.SP = (S.R.SP - 2) & 0xFFFF;
+        const stackPhys = is8086 ? ((S.Seg.SS << 4) + S.R.SP) : (S.R.SP);
+        if (stackPhys + 1 >= 512) throw new Error('Stack overflow / Memory error');
+        S.m[stackPhys] = val & 0xFF;
+        S.m[stackPhys + 1] = (val >> 8) & 0xFF;
+        logBusCycle('STACK PUSH', stackPhys, '0x' + hx(val, 4), 'SS:SP');
+      } else if (op === 'POP') {
+        const stackPhys = is8086 ? ((S.Seg.SS << 4) + S.R.SP) : (S.R.SP);
+        if (stackPhys + 1 >= 512) throw new Error('Stack underflow / Memory error');
+        const val = S.m[stackPhys] | (S.m[stackPhys + 1] << 8);
+        S.R.SP = (S.R.SP + 2) & 0xFFFF;
+        setOperandValue(x, val);
+        logBusCycle('STACK POP', stackPhys, '0x' + hx(val, 4), 'SS:SP');
+      } else if (op === 'CALL') {
+        const retAddr = S.pc + 1;
+        S.R.SP = (S.R.SP - 2) & 0xFFFF;
+        const stackPhys = is8086 ? ((S.Seg.SS << 4) + S.R.SP) : (S.R.SP);
+        S.m[stackPhys] = retAddr & 0xFF;
+        S.m[stackPhys + 1] = (retAddr >> 8) & 0xFF;
+        logBusCycle('CALL PUSH IP', stackPhys, '0x' + hx(retAddr, 4), 'Return IP');
+        nextPC = getTgt();
+      } else if (op === 'RET') {
+        const stackPhys = is8086 ? ((S.Seg.SS << 4) + S.R.SP) : (S.R.SP);
+        const retAddr = S.m[stackPhys] | (S.m[stackPhys + 1] << 8);
+        S.R.SP = (S.R.SP + 2) & 0xFFFF;
+        logBusCycle('RET POP IP', stackPhys, '0x' + hx(retAddr, 4), 'Return IP');
+        nextPC = retAddr;
+      } else if (op === 'LOOP') {
+        S.R.CX = (S.R.CX - 1) & 0xFFFF;
+        if (S.R.CX !== 0) nextPC = getTgt();
+      } else if (op === 'HLT') {
+        S.halted = 1;
+        nextPC = S.pc;
+      } else if (op in JUMP_CONDS) {
+        if (JUMP_CONDS[op](S)) nextPC = getTgt();
+      }
+    } catch (err) {
+      errEl.textContent = err.message || err;
+      S.halted = 1;
+      draw();
+      return false;
+    }
+
+    S.steps++;
+    S.pc = nextPC;
+
+    // Build changes summary
+    const changes = [];
+    REGS_16.forEach(r => {
+      if (prevRegs[r] !== S.R[r]) changes.push(`${r}: 0x${hx(prevRegs[r], 4)} → 0x${hx(S.R[r], 4)}`);
+    });
+    for (let i = 0; i < 512; i++) {
+      if (S.pm[i] !== S.m[i]) changes.push(`RAM[0x${hx(i, 3)}]=0x${hx(S.m[i])}`);
+    }
+
+    q('.sim-trace').innerHTML = `
+      <div><strong>Step #${S.steps}:</strong> <code>${I.src}</code></div>
+      <div>${changes.join(' &bull; ') || 'No register or memory state modified'}</div>
+      ${S.eaInfo ? `<div><strong>EA:</strong> Offset 0x${hx(S.eaInfo.offset, 4)} → Physical 0x${hx(S.eaInfo.phys, 5)} (Seg: 0x${hx(S.eaInfo.segVal, 4)})</div>` : ''}
+      <div><strong>Next Instruction:</strong> ${S.pc < instructions.length ? `<code>${instructions[S.pc].src}</code>` : '[Program Complete]'}</div>
+    `;
+
+    if (S.pc >= instructions.length && op !== 'HLT') S.halted = 1;
+    draw();
+    return !S.halted;
+  }
+
+  function draw() {
+    renderCells(q('.sim-regs'), REGS_16.map(r => [r, '0x' + hx(S.R[r], 4)]));
+    renderCells(q('.sim-flags'), [
+      ['ZF', String(S.F.ZF)],
+      ['SF', String(S.F.SF)],
+      ['CF', String(S.F.CF)],
+      ['OF', String(S.F.OF)],
+      ['PF', String(S.F.PF)],
+      ['IP', '0x' + hx(S.pc, 2)],
+      ['Steps', String(S.steps)]
+    ]);
+
+    if (is8086) {
+      renderCells(q('.sim-segs'), [
+        ['CS', '0x' + hx(S.Seg.CS, 4)],
+        ['DS', '0x' + hx(S.Seg.DS, 4)],
+        ['SS', '0x' + hx(S.Seg.SS, 4)],
+        ['ES', '0x' + hx(S.Seg.ES, 4)],
+        ['IP', '0x' + hx(S.pc, 4)]
+      ]);
+      q('.sim-ea').textContent = S.eaInfo
+        ? `Physical EA = (0x${hx(S.eaInfo.segVal, 4)} << 4) + 0x${hx(S.eaInfo.offset, 4)} = 0x${hx(S.eaInfo.phys, 5)}`
+        : '8086 Physical Address = (Segment Register × 16) + Effective Offset';
+
+      q('.sim-bus tbody').innerHTML = S.busCycles.map(b =>
+        `<tr><td>${b[0]}</td><td><strong>${b[1]}</strong></td><td><code>0x${hx(b[2], 5)}</code></td><td>${b[3]}</td><td>${b[4]}</td></tr>`
+      ).join('');
+    }
+
+    // Code listing
+    q('.sim-lst').innerHTML = instructions.map((item, idx) =>
+      `<div class="code-line ${idx === S.pc && !S.halted ? 'active' : ''}">
+        <span class="line-num">${hx(idx, 2)}</span>
+        <span class="line-text">${item.src}</span>
+      </div>`
+    ).join('');
+
+    // Highlight memory
+    const cls = {};
+    for (let i = 0; i < 512; i++) {
+      if (S.pm[i] !== S.m[i]) cls[i] = 'changed';
+    }
+    if (S.eaInfo) {
+      cls[S.eaInfo.phys] = (cls[S.eaInfo.phys] || '') + ' mar';
+      cls[S.eaInfo.phys + 1] = (cls[S.eaInfo.phys + 1] || '') + ' mar';
+    }
+    // Highlight stack memory around SP
+    const stackPhys = is8086 ? ((S.Seg.SS << 4) + S.R.SP) : S.R.SP;
+    if (stackPhys >= 0 && stackPhys < 512) {
+      cls[stackPhys] = (cls[stackPhys] || '') + ' stack';
+    }
+
+    renderGrid(q('.sim-mem'), S.m, S.base, 64, 16, cls, S.pm, (addr) => {
+      const cur = '0x' + hx(S.m[addr]);
+      const res = prompt(`Edit byte at RAM address 0x${hx(addr, 3)}:`, cur);
+      if (res !== null) {
+        const val = parseNum(res);
+        if (!isNaN(val)) {
+          S.pm = S.m.slice();
+          S.m[addr] = val & 0xFF;
+          draw();
+        }
+      }
+    });
+  }
+
+  // Event bindings
+  selProg.onchange = () => { ed.value = opts.presets[selProg.value]; reset(); };
+  q('.btn-reset').onclick = reset;
+  q('.btn-step').onclick = step;
+  q('.btn-run').onclick = () => {
+    if (runTimer) {
+      clearInterval(runTimer);
+      runTimer = null;
+      q('.btn-run').textContent = '▶ Run';
+      return;
+    }
+    q('.btn-run').textContent = '⏸ Pause';
+    const speedEl = is8086 ? $('#sim5Speed') : $('#sim3Speed');
+    const interval = parseInt(speedEl.value, 10);
+    let count = 0;
+    runTimer = setInterval(() => {
+      if (!step() || ++count > 3000) {
+        clearInterval(runTimer);
+        runTimer = null;
+        q('.btn-run').textContent = '▶ Run';
+      }
+    }, interval);
+  };
+
+  ed.value = opts.presets[selProg.value];
+  reset();
+}
+
+// Initialize Tab 3 (Assembly Interpreter)
+createAssemblySimulator($('#simHost3'), {
+  base: 0,
+  bus: false,
+  presets: {
+    'Arithmetic & Bit Masking': `; Store, add, mask and branch demonstration
+MOV [0], 5
+MOV [2], 9
+MOV AX, [0]
+ADD AX, [2]        ; AX = 14 (000Eh)
+MOV [4], AX
+MOV BX, 0F0Fh
+AND BX, 00FFh      ; BX = 000Fh
+XOR BX, 00FFh      ; BX = 00F0h
+MOV SI, 2
+MOV CX, [SI+0]     ; Indexed read
+CMP AX, 14
+JE done
+MOV DX, 1
+done: HLT`,
+
+    'Factorial with LOOP': `; Compute 5! using LOOP instruction
+MOV CX, 5          ; Loop counter CX = 5
+MOV AX, 1          ; Accumulator
+fact_lp: MUL CX    ; AX = AX * CX
+LOOP fact_lp       ; CX--, jump if CX != 0
+MOV [10h], AX      ; Store 120 (0078h)
+HLT`,
+
+    'Array Sum (Indexed)': `; Sum array elements in memory using SI
+MOV [0], 10h
+MOV [2], 20h
+MOV [4], 30h
+MOV [6], 40h
+MOV CX, 4          ; 4 elements
+MOV SI, 0          ; Array index
+MOV AX, 0          ; Sum accumulator
+sum_lp: ADD AX, [SI]
+ADD SI, 2          ; Word elements = 2 bytes
+LOOP sum_lp
+MOV [8], AX        ; Store sum = 100 (0064h)
+HLT`,
+
+    'Subroutine Call & Stack': `; Function call via CALL and RET using stack
+MOV AX, 7
+MOV BX, 3
+CALL add_numbers   ; Push return IP to stack
+MOV [10h], AX      ; Store result = 10
+HLT
+
+add_numbers:
+ADD AX, BX
+RET                ; Pop return IP and return`
+  }
+});
+
+// Initialize Tab 5 (8086 Simulator)
+createAssemblySimulator($('#simHost5'), {
+  base: 0x0100, // DS base: 0010h * 16 = 0100h
+  cs: 0x0000,
+  ss: 0x0020,
+  bus: true,
+  presets: {
+    'Loop Sum in Data Segment': `; Sum numbers 1 to 5, store in DS:0010h
+MOV CX, 5
+MOV AX, 0
+again: ADD AX, CX
+DEC CX
+CMP CX, 0
+JNE again          ; Loop until CX = 0
+MOV [10h], AX      ; Store result in Data Segment
+MOV BX, [10h]      ; Read back via bus cycle
+CMP BX, 15
+JE ok
+MOV DX, 0
+JMP end
+ok: MOV DX, 0FFFFh
+end: HLT`,
+
+    'Stack Call with SS:SP': `; Function call testing 8086 Stack Segment SS:SP
+MOV AX, 12h
+MOV BX, 34h
+PUSH AX            ; PUSH 12h to SS:SP
+PUSH BX            ; PUSH 34h to SS:SP
+CALL my_func
+POP CX             ; POP back into CX
+HLT
+
+my_func:
+ADD AX, BX
+RET`,
+
+    'Memory Block Copy (SI to DI)': `; Block transfer: Copy bytes from DS:0000 to DS:0010
+MOV [0], 0A1B2h
+MOV [2], 0C3D4h
+MOV SI, 0
+MOV DI, 10h
+MOV CX, 2          ; 2 words = 4 bytes
+copy_lp:
+MOV AX, [SI]
+MOV [DI], AX
+ADD SI, 2
+ADD DI, 2
+LOOP copy_lp
+HLT`
+  }
+});
+
+
+// ============================================================================
+// ==================== 4. ADDRESSING MODES VISUALIZER ========================
+// ============================================================================
+(function initAddressingModes() {
+  const P = $('#pane4'), q = s => $(s, P);
+  const sampleMem = Array.from({ length: 64 }, (_, i) => ((i * 13 + 7) & 0xFF));
+  let animStep = 5, animTimer = null;
+
+  const REG_VALS = { AX: 0x34, BX: 0x10, CX: 0x05, DX: 0x21 };
+
+  function getInp(id) {
+    const v = parseNum(q('#' + id).value);
+    return isNaN(v) ? 0 : v;
+  }
+
+  function calculateMode() {
+    const mode = q('#selMode4').value;
+    const bx = getInp('inpBX4') & 0xFFFF;
+    const bp = getInp('inpBP4') & 0xFFFF;
+    const si = getInp('inpSI4') & 0xFFFF;
+    const di = getInp('inpDI4') & 0xFFFF;
+    const disp = getInp('inpDisp4') & 0xFFFF;
+    const imm = getInp('inpImm4') & 0xFF;
+    const pc = getInp('inpPC4') & 0xFFFF;
+    const rel = getInp('inpRel4');
+
+    let insStr, decodeDesc, eaDesc, busDesc, resultDesc, eaAddr = null;
+
+    if (mode === 'imm') {
+      insStr = `MOV AL, 0x${hx(imm)}`;
+      decodeDesc = 'Immediate Addressing: Operand is encoded directly in the instruction byte stream.';
+      eaDesc = 'No effective memory address required.';
+      busDesc = 'Byte read from Instruction Register (IR). No RAM bus cycle required.';
+      resultDesc = `AL ← 0x${hx(imm)} (${imm})`;
+    } else if (mode === 'reg') {
+      insStr = 'MOV AL, BL';
+      decodeDesc = 'Register Addressing: Operand is located entirely within an internal CPU register.';
+      eaDesc = 'No effective memory address required.';
+      busDesc = 'Transferred across internal CPU bus from BL to AL. Zero memory bus cycles.';
+      resultDesc = `AL ← BL = 0x${hx(REG_VALS.BX & 0xFF)}`;
+    } else if (mode === 'dir') {
+      insStr = `MOV AL, [0x${hx(disp)}]`;
+      decodeDesc = 'Direct Addressing: 16-bit displacement in the instruction specifies the exact offset.';
+      eaAddr = disp;
+      eaDesc = `EA = Displacement = 0x${hx(disp)}`;
+      busDesc = `Address bus ← 0x${hx(eaAddr, 4)}; BIU issues Memory Read cycle to RAM[0x${hx(eaAddr)}]`;
+      const val = eaAddr < 64 ? sampleMem[eaAddr] : 0;
+      resultDesc = eaAddr < 64 ? `AL ← RAM[0x${hx(eaAddr)}] = 0x${hx(val)} (${val})` : 'EA is outside the 64-byte demo memory.';
+    } else if (mode === 'ind') {
+      insStr = 'MOV AL, [BX]';
+      decodeDesc = 'Register Indirect: Base register BX holds the memory address offset.';
+      eaAddr = bx;
+      eaDesc = `EA = BX = 0x${hx(bx)}`;
+      busDesc = `Address bus ← 0x${hx(eaAddr, 4)}; Memory Read cycle to RAM[0x${hx(eaAddr)}]`;
+      const val = eaAddr < 64 ? sampleMem[eaAddr] : 0;
+      resultDesc = eaAddr < 64 ? `AL ← RAM[0x${hx(eaAddr)}] = 0x${hx(val)} (${val})` : 'EA is outside the 64-byte demo memory.';
+    } else if (mode === 'idx') {
+      insStr = `MOV AL, [SI+0x${hx(disp)}]`;
+      decodeDesc = 'Indexed Addressing: Effective address is the sum of Index register SI and displacement.';
+      eaAddr = (si + disp) & 0xFFFF;
+      eaDesc = `EA = SI + Disp = 0x${hx(si)} + 0x${hx(disp)} = 0x${hx(eaAddr)}`;
+      busDesc = `Address bus ← 0x${hx(eaAddr, 4)}; Memory Read cycle to RAM[0x${hx(eaAddr)}]`;
+      const val = eaAddr < 64 ? sampleMem[eaAddr] : 0;
+      resultDesc = eaAddr < 64 ? `AL ← RAM[0x${hx(eaAddr)}] = 0x${hx(val)} (${val})` : 'EA is outside the 64-byte demo memory.';
+    } else if (mode === 'base') {
+      insStr = `MOV AL, [BP+0x${hx(disp)}]`;
+      decodeDesc = 'Based Addressing: Base register BP (uses Stack Segment SS by default) plus displacement.';
+      eaAddr = (bp + disp) & 0xFFFF;
+      eaDesc = `EA = BP + Disp = 0x${hx(bp)} + 0x${hx(disp)} = 0x${hx(eaAddr)} (Segment: SS)`;
+      busDesc = `Address bus ← SS:0x${hx(eaAddr, 4)}; Stack/Memory Read cycle`;
+      const val = eaAddr < 64 ? sampleMem[eaAddr] : 0;
+      resultDesc = eaAddr < 64 ? `AL ← RAM[0x${hx(eaAddr)}] = 0x${hx(val)} (${val})` : 'EA is outside the 64-byte demo memory.';
+    } else if (mode === 'baseIdx') {
+      insStr = `MOV AL, [BX+SI+0x${hx(disp)}]`;
+      decodeDesc = 'Based-Indexed Addressing: Combined Base register (BX), Index register (SI), and Displacement.';
+      eaAddr = (bx + si + disp) & 0xFFFF;
+      eaDesc = `EA = BX + SI + Disp = 0x${hx(bx)} + 0x${hx(si)} + 0x${hx(disp)} = 0x${hx(eaAddr)}`;
+      busDesc = `Address bus ← 0x${hx(eaAddr, 4)}; Memory Read cycle to RAM[0x${hx(eaAddr)}]`;
+      const val = eaAddr < 64 ? sampleMem[eaAddr] : 0;
+      resultDesc = eaAddr < 64 ? `AL ← RAM[0x${hx(eaAddr)}] = 0x${hx(val)} (${val})` : 'EA is outside the 64-byte demo memory.';
+    } else if (mode === 'rel') {
+      insStr = `JMP ${rel >= 0 ? '+' : ''}${rel}`;
+      decodeDesc = 'Relative Addressing: Signed 8-bit or 16-bit offset relative to next instruction pointer (PC+2).';
+      eaAddr = (pc + 2 + rel) & 0xFFFF;
+      eaDesc = `Target Address = (PC + 2) + Offset = 0x${hx(pc + 2)} ${rel < 0 ? '-' : '+'} ${Math.abs(rel)} = 0x${hx(eaAddr)}`;
+      busDesc = 'Internal CPU branch: Instruction Pointer IP updated directly. No memory read.';
+      resultDesc = `Control branches to IP = 0x${hx(eaAddr)}`;
+    }
+
+    const steps = [
+      ['1. Instruction Fetch', `CS:IP fetches instruction bytes into Instruction Register: <code>${insStr}</code>`],
+      ['2. Instruction Decode', decodeDesc],
+      ['3. Effective Address (EA)', eaDesc],
+      ['4. Bus & Transfer Cycle', busDesc],
+      ['5. Execution & Result', resultDesc]
+    ];
+
+    return { insStr, steps, eaAddr };
+  }
+
+  function renderVisualizer() {
+    const data = calculateMode();
+    q('#insText4').innerHTML = `<code>${data.insStr}</code>`;
+
+    q('#pipeSteps4').innerHTML = data.steps.map(([title, desc], idx) =>
+      `<div class="pipe-step ${idx < animStep ? 'active' : ''}">
+        <div class="step-title">${title}</div>
+        <div class="step-desc">${desc}</div>
+      </div>`
+    ).join('');
+
+    const cls = {};
+    if (data.eaAddr !== null && data.eaAddr < 64) {
+      cls[data.eaAddr] = 'mar pc';
+    }
+    renderGrid(q('#mem4'), sampleMem, 0, 64, 16, cls);
+  }
+
+  P.addEventListener('input', () => {
+    if (animTimer) { clearInterval(animTimer); animTimer = null; }
+    animStep = 5;
+    renderVisualizer();
+  });
+
+  q('#btnShowAll4').onclick = () => {
+    if (animTimer) { clearInterval(animTimer); animTimer = null; }
+    animStep = 5;
+    renderVisualizer();
+  };
+
+  q('#btnNextStep4').onclick = () => {
+    if (animTimer) { clearInterval(animTimer); animTimer = null; }
+    animStep = Math.min(animStep + 1, 5);
+    renderVisualizer();
+  };
+
+  q('#btnAnim4').onclick = () => {
+    if (animTimer) clearInterval(animTimer);
+    animStep = 0;
+    renderVisualizer();
+    animTimer = setInterval(() => {
+      animStep++;
+      renderVisualizer();
+      if (animStep >= 5) {
+        clearInterval(animTimer);
+        animTimer = null;
+      }
+    }, 600);
+  };
+
+  renderVisualizer();
+})();
+</script>
+</body>
+</html>

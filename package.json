@@ -1,0 +1,20 @@
+{
+  "name": "cpu-architecture-lab",
+  "version": "1.0.0",
+  "description": "Interactive CPU Architecture Lab & 8086 Microprocessor Simulator",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve ."
+  },
+  "keywords": [
+    "cpu",
+    "simulator",
+    "8086",
+    "assembly",
+    "computer-architecture",
+    "microprocessor",
+    "microcode"
+  ],
+  "author": "Ishan",
+  "license": "MIT"
+}
